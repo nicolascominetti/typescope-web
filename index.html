@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TypeScope · Levantamiento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --bg:#F2F2F2; --surface:#FFFFFF; --surface2:#F7F5FF; --line:#E6E3EE; --line2:#F0EEF5;
+  --purple:#3100C1; --purple-l:#6424D6; --purple-lll:#C6B4EE; --lav:#E8E4F8; --teal:#37FFDB;
+  --text:#3F3F3F; --dim:#7F7F7F; --faint:#AAAAAA;
+  --ok:#0E9F6E; --ok-bg:#E3F6EE; --inf:#3B6FD8; --inf-bg:#E6EEFC;
+  --est:#C27803; --est-bg:#FDF3DC; --falta:#D63B3B; --falta-bg:#FCE9E9;
+  --font:'Nunito','Segoe UI',system-ui,sans-serif; --r:10px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+a{color:var(--purple)}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--purple-l);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* marca */
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;color:var(--purple);font-size:17px;letter-spacing:-.01em}
+.brand i{width:28px;height:28px;border-radius:7px;background:var(--purple);position:relative;overflow:hidden;display:block;flex:none}
+.brand i::after{content:"";position:absolute;right:0;bottom:0;width:14px;height:14px;background:var(--teal);clip-path:polygon(100% 0,100% 100%,0 100%)}
+.brand small{font-weight:700;color:var(--dim);font-size:13px}
+
+/* botones y campos */
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);color:var(--purple);font-weight:800;font-size:12.5px;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;text-decoration:none}
+.btn:hover{border-color:var(--purple-lll);background:var(--surface2)}
+.btn.solid{background:var(--purple);color:#fff;border-color:var(--purple)}
+.btn.solid:hover{background:var(--purple-l)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn svg{width:14px;height:14px;flex:none}
+.inp{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;outline:none}
+.inp:focus{border-color:var(--purple-l);box-shadow:0 0 0 3px rgba(100,36,214,.12)}
+label.f{display:block;font-size:12px;font-weight:800;color:var(--dim);margin:12px 0 5px}
+
+/* login */
+.login{min-height:100vh;display:grid;place-items:center;padding:16px;background:var(--purple);position:relative;overflow:hidden}
+.login::after{content:"";position:absolute;left:0;bottom:0;width:160px;height:46px;background:var(--teal);clip-path:polygon(0 0,0 100%,100% 100%)}
+.login form{background:#fff;border-radius:16px;padding:30px 28px 26px;width:100%;max-width:380px;box-shadow:0 30px 60px -30px rgba(0,0,0,.6);position:relative;z-index:1}
+.login h1{font-size:22px;margin:18px 0 4px;font-weight:900;letter-spacing:-.01em}
+.login p{margin:0 0 8px;color:var(--dim);font-size:13px}
+.login .btn{width:100%;justify-content:center;margin-top:18px;padding:10px}
+.err{color:var(--falta);font-size:12.5px;font-weight:700;margin-top:10px;min-height:1em}
+
+/* barra superior */
+.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
+.top-in{display:flex;align-items:center;gap:14px;padding:10px 20px;flex-wrap:wrap}
+.top .sp{flex:1}
+.who{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim)}
+.who b{color:var(--text)}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--dim)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.live.on i{background:var(--ok);box-shadow:0 0 0 3px var(--ok-bg)}
+
+/* espacio de trabajo */
+.ws{display:grid;grid-template-columns:340px minmax(0,1fr);min-height:calc(100vh - 53px)}
+.side{border-right:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;min-height:0;position:sticky;top:53px;height:calc(100vh - 53px)}
+.side-h{padding:16px 16px 10px;border-bottom:1px solid var(--line2)}
+.side-h h2{margin:0 0 2px;font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);font-weight:900}
+.side-h .tot{font-size:12.5px;color:var(--dim);margin-bottom:10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:800;color:var(--dim);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--purple);border-color:var(--purple);color:#fff}
+.lista{overflow:auto;flex:1;padding:6px 8px 16px}
+.pj{display:block;width:100%;text-align:left;border:1px solid transparent;background:none;border-radius:10px;padding:10px 10px 11px;cursor:pointer;margin-bottom:2px}
+.pj:hover{background:var(--surface2)}
+.pj[aria-current=true]{background:var(--lav);border-color:var(--purple-lll)}
+.pj .n{font-weight:900;font-size:13.5px;line-height:1.25;display:flex;gap:6px;align-items:flex-start}
+.pj .n span:first-child{flex:1;min-width:0}
+.pj .s{font-size:11.5px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pj .row{display:flex;align-items:center;gap:8px;margin-top:7px}
+.mini{flex:1;height:5px;border-radius:3px;background:#EEECF3;overflow:hidden}
+.mini i{display:block;height:100%;background:var(--purple);border-radius:3px}
+.pj .pct{font-size:11.5px;font-weight:900;width:34px;text-align:right}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:900;padding:1px 7px;border-radius:999px;white-space:nowrap}
+.tag.ok{background:var(--ok-bg);color:var(--ok)}
+.tag.warn{background:var(--est-bg);color:var(--est)}
+.tag.bad{background:var(--falta-bg);color:var(--falta)}
+.tag.neu{background:var(--line2);color:var(--dim)}
+
+/* detalle */
+.main{padding:22px 28px 60px;min-width:0}
+.vacio{display:grid;place-items:center;height:60vh;color:var(--dim)}
+.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:900;color:var(--purple-l)}
+.d-h{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.d-h h1{font-size:28px;line-height:1.1;margin:6px 0 4px;font-weight:900;letter-spacing:-.02em}
+.d-h .sub{color:var(--dim);font-size:13px}
+.d-h .acc{margin-left:auto;display:flex;gap:8px;align-items:center}
+.kp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 14px}
+.k{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.k .l{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+.k .v{font-size:26px;font-weight:900;letter-spacing:-.02em;line-height:1.1;margin-top:5px}
+.k .x{font-size:12px;color:var(--dim);margin-top:3px}
+.k select{margin-top:7px;font-weight:800}
+.prio{display:flex;gap:10px;margin-top:8px}
+.prio div{flex:1}
+.prio span{display:block;font-size:10.5px;color:var(--dim);font-weight:800}
+.prio .mini{margin-top:3px}
+.banner{border-radius:12px;padding:12px 15px;display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;font-size:13px}
+.banner b{font-weight:900}
+.banner.ok{background:var(--ok-bg);color:#075E42}
+.banner.warn{background:var(--est-bg);color:#7A4B00}
+.banner.bad{background:var(--falta-bg);color:#8A1F1F}
+.banner ul{margin:4px 0 0;padding-left:18px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:18px 0 0;overflow-x:auto}
+.tab{border:0;background:none;padding:10px 14px;font-weight:800;color:var(--dim);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected=true]{color:var(--purple);border-bottom-color:var(--purple)}
+.tab small{font-weight:800;color:var(--faint);margin-left:4px}
+.panel{background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:6px 0 10px}
+.tools{display:flex;gap:8px;align-items:center;padding:10px 16px;flex-wrap:wrap}
+.tools .sp{flex:1}
+.tools .inp{width:220px;padding:6px 10px}
+
+/* tablas */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);font-weight:900;text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface);position:sticky;top:0}
+td{padding:9px 12px;border-bottom:1px solid var(--line2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+tr.grp td{background:var(--surface2);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.09em;color:var(--purple);padding:7px 12px}
+.dato b{font-weight:800;display:block}
+.dato small{color:var(--dim);font-size:11.5px;display:block;max-width:46ch}
+.val{font-weight:800;word-break:break-word}
+.val.none{color:var(--faint);font-weight:700}
+.st{display:inline-block;font-size:11px;font-weight:900;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.st.Confirmado{background:var(--ok-bg);color:var(--ok)}
+.st.Inferido{background:var(--inf-bg);color:var(--inf)}
+.st.Estimado{background:var(--est-bg);color:var(--est)}
+.st.Falta{background:var(--falta-bg);color:var(--falta)}
+.src{font-size:11.5px;color:var(--dim);max-width:34ch}
+.src .eq{color:var(--purple);font-weight:800}
+.conf{margin-top:6px;background:var(--est-bg);border-radius:8px;padding:7px 9px;font-size:12px;color:#7A4B00;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.conf b{font-weight:900}
+.u-tbl td{padding:7px 12px;font-size:13px}
+.flag{color:var(--falta);font-weight:900}
+
+/* documentos */
+.drop{margin:12px 16px;border:2px dashed var(--purple-lll);border-radius:12px;padding:16px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1.3fr) auto;gap:10px;align-items:end;background:var(--surface2)}
+.drop label.f{margin-top:0}
+
+/* historial */
+.h-item{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;padding:9px 16px;border-bottom:1px solid var(--line2);font-size:13px}
+.h-item time{color:var(--dim);font-size:12px}
+.h-item .q{font-weight:800}
+.h-item .ch{color:var(--dim)}
+.h-item .ch b{color:var(--text)}
+
+/* modal */
+dialog{border:0;border-radius:16px;padding:0;width:min(560px,calc(100vw - 32px));box-shadow:0 30px 70px -20px rgba(20,0,90,.45)}
+dialog::backdrop{background:rgba(25,10,70,.45)}
+.m-h{padding:18px 22px 12px;border-bottom:1px solid var(--line2)}
+.m-h h3{margin:2px 0 0;font-size:18px;font-weight:900}
+.m-h p{margin:6px 0 0;color:var(--dim);font-size:12.5px}
+.m-b{padding:6px 22px 18px;max-height:62vh;overflow:auto}
+.m-f{padding:12px 22px;border-top:1px solid var(--line2);display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.m-f .err{margin:0 auto 0 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg label{border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:800;font-size:12.5px;display:flex;align-items:center;gap:6px}
+.seg input{accent-color:var(--purple)}
+.hint{font-size:11.5px;color:var(--dim);margin-top:5px}
+.actual{background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:12.5px;margin-top:12px}
+
+/* avisos */
+.toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:100;max-width:min(380px,calc(100vw - 32px))}
+.toast{background:#1E0B5E;color:#fff;border-radius:10px;padding:10px 14px;font-size:13px;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);animation:in .2s ease-out}
+.toast.bad{background:#8A1F1F}
+@keyframes in{from{transform:translateY(8px);opacity:0}}
+
+@media (max-width:900px){
+  .ws{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .lista{max-height:38vh}
+  .main{padding:18px 16px 50px}
+  .kp{grid-template-columns:1fr 1fr}
+  .drop{grid-template-columns:1fr}
+  .top-in{padding:10px 16px}
+}
+@media (max-width:520px){.kp{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<section class="login" id="v-login" hidden>
+  <form id="f-login" autocomplete="on">
+    <div class="brand"><i></i>TypeScope <small>Levantamiento colaborativo</small></div>
+    <h1>Entrar</h1>
+    <p>Acceso solo para el equipo. Si no tienes cuenta, pídela a Nicolás.</p>
+    <label class="f" for="l-email">Correo</label>
+    <input class="inp" id="l-email" type="email" autocomplete="username" required>
+    <label class="f" for="l-pass">Contraseña</label>
+    <input class="inp" id="l-pass" type="password" autocomplete="current-password" required>
+    <button class="btn solid" type="submit">Entrar</button>
+    <div class="err" id="l-err" role="alert"></div>
+  </form>
+</section>
+
+<div id="v-app" hidden>
+  <header class="top"><div class="top-in">
+    <div class="brand"><i></i>TypeScope <small id="t-lote">Levantamiento colaborativo</small></div>
+    <span class="sp"></span>
+    <span class="live" id="t-live" title="Los cambios de otras personas aparecen solos"><i></i><span>Conectando…</span></span>
+    <span class="who"><b id="t-user"></b></span>
+    <button class="btn sm" id="b-pass">Cambiar contraseña</button>
+    <button class="btn sm ghost" id="b-salir">Salir</button>
+  </div></header>
+  <div class="ws">
+    <aside class="side">
+      <div class="side-h">
+        <h2>Proyectos</h2>
+        <div class="tot" id="s-tot"></div>
+        <input class="inp" id="s-q" type="search" placeholder="Buscar proyecto o inmobiliaria">
+        <div class="chips" id="s-f">
+          <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
+          <button class="chip" data-f="faltan">Faltan críticos</button>
+          <button class="chip" data-f="conflictos">Con conflictos</button>
+          <button class="chip" data-f="listos">Listos para modelar</button>
+        </div>
+      </div>
+      <nav class="lista" id="s-lista" aria-label="Proyectos"></nav>
+    </aside>
+    <main class="main" id="d"><div class="vacio">Cargando…</div></main>
+  </div>
+</div>
+
+<dialog id="m-edit"><form method="dialog" id="f-edit">
+  <div class="m-h"><div class="eyebrow" id="e-eye"></div><h3 id="e-tit"></h3><p id="e-ayuda"></p></div>
+  <div class="m-b" id="e-campos"></div>
+  <div class="m-f"><div class="err" id="e-err" role="alert"></div>
+    <button class="btn" value="cancel" formnovalidate>Cancelar</button>
+    <button class="btn solid" id="e-ok" value="ok">Guardar</button></div>
+</form></dialog>
+
+<dialog id="m-pass"><form method="dialog" id="f-pass">
+  <div class="m-h"><h3>Cambiar contraseña</h3><p>Mínimo 8 caracteres.</p></div>
+  <div class="m-b"><label class="f" for="p-1">Nueva contraseña</label><input class="inp" id="p-1" type="password" autocomplete="new-password" minlength="8" required>
+    <label class="f" for="p-2">Repítela</label><input class="inp" id="p-2" type="password" autocomplete="new-password" minlength="8" required></div>
+  <div class="m-f"><div class="err" id="p-err" role="alert"></div>
+    <button class="btn" value="cancel" formnovalidate>Cancelar</button><button class="btn solid" value="ok">Guardar</button></div>
+</form></dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+const SUPABASE_URL = "https://uwrtkcyudfmduorcoxbf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_kqDSMCnAX0kqOzmAXFNrjA_37-6quhT";   // pública por diseño: el acceso lo controla la base
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ESTADOS = ["Confirmado", "Inferido", "Estimado", "Falta"];
+const VALOR_ESTADO = {Confirmado: 1, Inferido: .5, Estimado: 0, Falta: 0};
+const PESO = {"Crítico": .5, "Importante": .35, "Complementario": .15};
+const ETAPAS = ["Catastro inicial", "Revisión", "Incorporación", "Validación", "Modelado"];
+const FUENTES = ["Sala de ventas", "Web inmobiliaria", "Brochure / plantas", "Permiso (DOM)", "Portal inmobiliario",
+                 "Terreno", "Llamado o correo", "Otro"];
+const TIPOS_DOC = ["Brochure / plantas", "Lista de precios", "Permiso (DOM)", "Foto de terreno", "Correo o cotización", "Otro"];
+const CAMPOS_TIP = [
+  {campo: "nombre", label: "Nombre o modelo", tipo: "texto"},
+  {campo: "dormitorios", label: "Dormitorios", tipo: "entero"}, {campo: "banos", label: "Baños", tipo: "entero"},
+  {campo: "m2_util", label: "m² útil", tipo: "m2"}, {campo: "m2_terraza", label: "m² terraza", tipo: "m2"},
+  {campo: "precio_desde_uf", label: "Precio desde (UF)", tipo: "uf"}];
+const CAMPOS_UNI = [
+  {campo: "numero", label: "N° de depto", tipo: "texto"}, {campo: "piso", label: "Piso", tipo: "entero"},
+  {campo: "precio_lista_uf", label: "Precio de lista (UF)", tipo: "uf"},
+  {campo: "estado_venta", label: "Estado de venta", tipo: "opcion", opciones: ["Disponible", "Reservado", "Vendido"]}];
+
+const S = {user: null, equipo: new Map(), campos: [], proyectos: [], resumen: new Map(), conflictos: new Map(),
+           actual: null, det: null, tab: "ficha", filtro: "todos", q: "", uq: "", ufil: "todas"};
+
+// ── utilidades ────────────────────────────────────────────────────────────────
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const nf = (v, d = 0) => v == null || v === "" || isNaN(v) ? "—" : Number(v).toLocaleString("es-CL", {minimumFractionDigits: d, maximumFractionDigits: d});
+const pct = v => Math.round((v || 0) * 100) + "%";
+const nombre = email => email === "motor" ? "Motor TypeScope" : (S.equipo.get(email)?.nombre || email || "");
+const fecha = t => t ? new Date(t).toLocaleString("es-CL", {day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"}) : "";
+const tiene = r => r && r.valor !== null && r.valor !== "" && r.estado !== "Falta";
+const esUrl = v => /^https?:\/\//i.test(String(v || ""));
+
+function fmt(v, tipo) {
+  if (v === null || v === undefined || v === "") return "";
+  if (tipo === "uf") return "UF " + nf(v);
+  if (tipo === "m2") return nf(v, 2) + " m²";
+  return String(v);
+}
+function valorHtml(v, tipo) {
+  if (v === null || v === undefined || v === "") return '<span class="val none">sin dato</span>';
+  if (tipo === "url" && esUrl(v)) {
+    const corto = String(v).replace(/^https?:\/\/(www\.)?/, "").slice(0, 46);
+    return `<a class="val" href="${esc(v)}" target="_blank" rel="noopener">${esc(corto)}${String(v).length > 60 ? "…" : ""}</a>`;
+  }
+  return `<span class="val">${esc(fmt(v, tipo))}</span>`;
+}
+function toast(msg, malo = false) {
+  const t = document.createElement("div");
+  t.className = "toast" + (malo ? " bad" : ""); t.textContent = msg;
+  $("#toasts").append(t); setTimeout(() => t.remove(), malo ? 7000 : 4500);
+}
+async function todo(armar) {          // pagina de a 1.000 filas (límite de la API)
+  let out = [];
+  for (let i = 0; ; i += 1000) {
+    const {data, error} = await armar().range(i, i + 999);
+    if (error) throw error;
+    out = out.concat(data);
+    if (data.length < 1000) return out;
+  }
+}
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+// ── indicadores (mismas reglas que scraping/colaboracion/indicadores.py) ─────
+function indicadores(p, filas) {
+  const ficha = new Map(), tips = new Map();
+  for (const r of filas) {
+    if (r.ambito === "ficha") ficha.set(r.campo, r);
+    else if (r.ambito === "tipologia") { if (!tips.has(r.item)) tips.set(r.item, new Map()); tips.get(r.item).set(r.campo, r); }
+  }
+  const casa = p.tipo_inmueble === "casa";
+  const items = [...tips.values()], n = items.length;
+  const con = k => items.filter(m => tiene(m.get(k))).length;
+  const virt = x => !n || !x ? "Falta" : (x === n ? "Confirmado" : "Inferido");
+  const estados = {};
+  for (const c of S.campos) {
+    if (c.solo_edificio && casa) continue;
+    if (c.clave === "tipologias") estados[c.clave] = virt(con("m2_util"));
+    else if (c.clave === "precio_tipologia") estados[c.clave] = virt(con("precio_desde_uf"));
+    else estados[c.clave] = ficha.get(c.clave)?.estado || "Falta";
+  }
+  const porPrioridad = {};
+  for (const pr of Object.keys(PESO)) {
+    const del = S.campos.filter(c => c.prioridad === pr && c.clave in estados);
+    if (del.length) porPrioridad[pr] = del.reduce((s, c) => s + VALOR_ESTADO[estados[c.clave]], 0) / del.length;
+  }
+  const ks = Object.keys(porPrioridad);
+  const completitud = ks.reduce((s, k) => s + PESO[k] * porPrioridad[k], 0) / ks.reduce((s, k) => s + PESO[k], 0);
+  const requeridos = ["url_portal", "unidades_total", "tipologias"].concat(casa ? [] : ["pisos_total"]);
+  const faltan = requeridos.filter(k => !["Confirmado", "Inferido"].includes(estados[k]))
+                           .map(k => S.campos.find(c => c.clave === k)?.nombre || k);
+  const criticosFaltan = S.campos.some(c => c.prioridad === "Crítico" && estados[c.clave] === "Falta");
+  return {completitud, porPrioridad, estados, faltan, listo: !faltan.length, criticosFaltan, nTip: n};
+}
+
+// ── sesión ────────────────────────────────────────────────────────────────────
+async function iniciar() {
+  const {data: {session}} = await sb.auth.getSession();
+  if (!session) return mostrarLogin();
+  S.user = session.user;
+  $("#v-login").hidden = true; $("#v-app").hidden = false;
+  try { await cargarTodo(); } catch (e) { $("#d").innerHTML = `<div class="vacio">No se pudo cargar: ${esc(e.message)}</div>`; return; }
+  if (!S.equipo.has(S.user.email.toLowerCase())) {
+    $("#d").innerHTML = '<div class="vacio">Tu cuenta no está en el equipo. Pide acceso a Nicolás.</div>'; return;
+  }
+  $("#t-user").textContent = nombre(S.user.email.toLowerCase());
+  suscribir();
+  const desdeUrl = decodeURIComponent(location.hash.slice(1));
+  abrir(S.proyectos.some(p => p.id === desdeUrl) ? desdeUrl : S.proyectos[0]?.id);
+}
+function mostrarLogin() { $("#v-app").hidden = true; $("#v-login").hidden = false; $("#l-email").focus(); }
+
+$("#f-login").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("#l-err").textContent = "";
+  const {error} = await sb.auth.signInWithPassword({email: $("#l-email").value.trim(), password: $("#l-pass").value});
+  if (error) { $("#l-err").textContent = /invalid/i.test(error.message) ? "Correo o contraseña incorrectos." : error.message; return; }
+  iniciar();
+});
+$("#b-salir").onclick = async () => { await sb.auth.signOut(); location.hash = ""; location.reload(); };
+$("#b-pass").onclick = () => { $("#p-err").textContent = ""; $("#f-pass").reset(); $("#m-pass").showModal(); };
+$("#f-pass").addEventListener("submit", async e => {
+  if (e.submitter?.value !== "ok") return;
+  e.preventDefault();
+  if ($("#p-1").value !== $("#p-2").value) { $("#p-err").textContent = "No coinciden."; return; }
+  const {error} = await sb.auth.updateUser({password: $("#p-1").value});
+  if (error) { $("#p-err").textContent = error.message; return; }
+  $("#m-pass").close(); toast("Contraseña actualizada");
+});
+
+// ── carga ─────────────────────────────────────────────────────────────────────
+async function cargarTodo() {
+  const [eq, ca, pr] = await Promise.all([
+    sb.from("equipo").select("email,nombre,rol"),
+    sb.from("campos").select("*").order("orden"),
+    sb.from("proyectos").select("*").order("id")]);
+  for (const r of [eq, ca, pr]) if (r.error) throw r.error;
+  S.equipo = new Map(eq.data.map(p => [p.email, p]));
+  S.campos = ca.data; S.proyectos = pr.data;
+  if (S.proyectos[0]) $("#t-lote").textContent = S.proyectos[0].lote;
+  await cargarResumen();
+}
+async function cargarResumen(pid) {
+  const filas = await todo(() => {
+    let q = sb.from("valores").select("proyecto_id,ambito,item,campo,valor,estado").in("ambito", ["ficha", "tipologia"]);
+    if (pid) q = q.eq("proyecto_id", pid);
+    return q.order("proyecto_id").order("ambito").order("item").order("campo");
+  });
+  let cq = sb.from("valores").select("proyecto_id").not("propuesta", "is", null);
+  if (pid) cq = cq.eq("proyecto_id", pid);
+  const {data: conf} = await cq;
+  const por = new Map();
+  for (const r of filas) { if (!por.has(r.proyecto_id)) por.set(r.proyecto_id, []); por.get(r.proyecto_id).push(r); }
+  for (const p of S.proyectos) {
+    if (pid && p.id !== pid) continue;
+    S.resumen.set(p.id, indicadores(p, por.get(p.id) || []));
+    S.conflictos.set(p.id, (conf || []).filter(c => c.proyecto_id === p.id).length);
+  }
+  pintarLista();
+}
+async function cargarDetalle(pid) {
+  const [valores, docs, hist] = await Promise.all([
+    todo(() => sb.from("valores").select("*").eq("proyecto_id", pid).order("ambito").order("item").order("campo")),
+    sb.from("documentos").select("*").eq("proyecto_id", pid).order("subido_en", {ascending: false}),
+    sb.from("historial").select("*").eq("proyecto_id", pid).order("en", {ascending: false}).limit(300)]);
+  if (pid !== S.actual) return;
+  const p = S.proyectos.find(x => x.id === pid);
+  S.det = {valores, docs: docs.data || [], hist: hist.data || [], ind: indicadores(p, valores)};
+  S.resumen.set(pid, S.det.ind);
+  S.conflictos.set(pid, valores.filter(v => v.propuesta !== null).length);
+  pintarLista(); pintarDetalle();
+}
+
+// ── lista ─────────────────────────────────────────────────────────────────────
+function pintarLista() {
+  const q = S.q.toLowerCase();
+  const vis = S.proyectos.filter(p => {
+    const i = S.resumen.get(p.id); if (!i) return false;
+    if (q && !`${p.nombre} ${p.inmobiliaria || ""} ${p.comuna || ""} ${p.id}`.toLowerCase().includes(q)) return false;
+    if (S.filtro === "faltan") return i.criticosFaltan;
+    if (S.filtro === "conflictos") return S.conflictos.get(p.id) > 0;
+    if (S.filtro === "listos") return i.listo;
+    return true;
+  });
+  const listos = S.proyectos.filter(p => S.resumen.get(p.id)?.listo).length;
+  $("#s-tot").textContent = `${S.proyectos.length} proyectos · ${listos} listos para modelar`;
+  $("#s-lista").innerHTML = vis.map(p => {
+    const i = S.resumen.get(p.id), c = S.conflictos.get(p.id) || 0;
+    return `<button class="pj" data-id="${esc(p.id)}" aria-current="${p.id === S.actual}">
+      <div class="n"><span>${esc(p.nombre)}</span>${i.listo ? '<span class="tag ok">Listo</span>' : ""}</div>
+      <div class="s">${esc([p.inmobiliaria, p.comuna].filter(Boolean).join(" · "))} · ${esc(p.etapa)}</div>
+      <div class="row"><div class="mini"><i style="width:${pct(i.completitud)}"></i></div><span class="pct num">${pct(i.completitud)}</span>
+      ${c ? `<span class="tag warn" title="El motor trajo valores distintos a los del equipo">${c} conflicto${c > 1 ? "s" : ""}</span>` : ""}</div>
+    </button>`;
+  }).join("") || '<p style="padding:16px;color:var(--dim)">Ningún proyecto con ese filtro.</p>';
+}
+$("#s-lista").addEventListener("click", e => { const b = e.target.closest(".pj"); if (b) abrir(b.dataset.id); });
+$("#s-q").addEventListener("input", e => { S.q = e.target.value; pintarLista(); });
+$("#s-f").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  S.filtro = b.dataset.f;
+  for (const c of $("#s-f").children) c.setAttribute("aria-pressed", c === b);
+  pintarLista();
+});
+
+function abrir(pid) {
+  if (!pid) { $("#d").innerHTML = '<div class="vacio">Aún no hay proyectos cargados.</div>'; return; }
+  S.actual = pid; S.det = null; history.replaceState(null, "", "#" + encodeURIComponent(pid));
+  $("#d").innerHTML = '<div class="vacio">Cargando proyecto…</div>';
+  pintarLista(); cargarDetalle(pid);
+}
+
+// ── detalle ───────────────────────────────────────────────────────────────────
+function pintarDetalle() {
+  const p = S.proyectos.find(x => x.id === S.actual), d = S.det, i = d.ind, m = p.motor || {};
+  const nConf = d.valores.filter(v => v.propuesta !== null).length;
+  const nTip = new Set(d.valores.filter(v => v.ambito === "tipologia").map(v => v.item)).size;
+  const nUni = new Set(d.valores.filter(v => v.ambito === "unidad").map(v => v.item)).size;
+  const barra = pr => i.porPrioridad[pr] == null ? "" :
+    `<div><span>${pr} ${pct(i.porPrioridad[pr])}</span><div class="mini"><i style="width:${pct(i.porPrioridad[pr])}"></i></div></div>`;
+  const scroll = $(".panel")?.parentElement === $("#d") ? window.scrollY : null;
+  $("#d").innerHTML = `
+    <div class="d-h"><div>
+      <div class="eyebrow">${esc(p.id)} · ${esc(p.comuna || "")}${p.tipo_inmueble === "casa" ? " · Casas" : ""}</div>
+      <h1>${esc(p.nombre)}</h1>
+      <div class="sub">${esc(p.inmobiliaria || "Inmobiliaria sin identificar")} · ${esc(p.lote)}</div></div>
+    </div>
+    <div class="kp">
+      <div class="k"><div class="l">Completitud</div><div class="v num">${pct(i.completitud)}</div>
+        <div class="prio">${barra("Crítico")}${barra("Importante")}${barra("Complementario")}</div></div>
+      <div class="k"><div class="l">Etapa</div>
+        <select class="inp" id="d-etapa">${ETAPAS.map(e => `<option ${e === p.etapa ? "selected" : ""}>${e}</option>`).join("")}</select>
+        <div class="x">${p.etapa_por ? `${esc(nombre(p.etapa_por))} · ${fecha(p.etapa_en)}` : "Sin cambios aún"}</div></div>
+      <div class="k"><div class="l">Modelo (última corrida)</div><div class="v">Nivel ${m.nivel ?? "—"}</div>
+        <div class="x">${esc(m.nivel_texto || "")} · confianza ${pct(m.confianza)}</div></div>
+      <div class="k"><div class="l">Unidades</div><div class="v num">${nf(m.unidades_vistas)}</div>
+        <div class="x">vistas en el portal · ${nf(m.inventario)} en el inventario del motor</div></div>
+    </div>
+    ${i.listo
+      ? `<div class="banner ok"><div><b>Listo para modelar.</b> Los datos críticos tienen fuente. Corre el motor con lo levantado para subir el nivel del modelo.</div></div>`
+      : `<div class="banner warn"><div><b>Falta para modelar:</b> ${i.faltan.map(esc).join(" · ")}.
+         <div style="margin-top:3px">Cada uno debe quedar Confirmado o Inferido, con su fuente.</div></div></div>`}
+    ${nConf ? `<div class="banner bad"><div><b>${nConf} conflicto${nConf > 1 ? "s" : ""}:</b> el motor trajo valores distintos a datos del equipo. No se pisó nada; revísalos en la ficha.</div></div>` : ""}
+    ${(m.para_subir || []).length ? `<div class="banner" style="background:var(--surface2);color:var(--text)"><div><b>Para que el modelo suba de nivel:</b><ul>${m.para_subir.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div></div>` : ""}
+    <div class="tabs" role="tablist">
+      ${[["ficha", "Ficha", ""], ["tipologias", "Tipologías", nTip], ["unidades", "Unidades", nUni], ["documentos", "Documentos", d.docs.length], ["historial", "Historial", ""]]
+        .map(([k, t, n]) => `<button class="tab" role="tab" data-t="${k}" aria-selected="${S.tab === k}">${t}${n !== "" ? `<small>${n}</small>` : ""}</button>`).join("")}
+    </div>
+    <div class="panel" id="d-panel"></div>`;
+  $("#d-etapa").onchange = e => cambiarEtapa(p, e.target.value);
+  $("#d").querySelector(".tabs").onclick = e => { const b = e.target.closest(".tab"); if (b) { S.tab = b.dataset.t; pintarDetalle(); } };
+  ({ficha: panelFicha, tipologias: panelTipologias, unidades: panelUnidades, documentos: panelDocumentos, historial: panelHistorial})[S.tab]();
+  if (scroll != null) window.scrollTo(0, scroll);
+}
+
+function fuenteHtml(r) {
+  if (!r) return "";
+  const quien = r.origen === "equipo" ? `<span class="eq">${esc(nombre(r.autor))}</span> · ${fecha(r.actualizado_en)}` : "motor";
+  return `<div class="src">${esc(r.fuente || "")}${r.fuente ? " · " : ""}${quien}${r.nota ? `<br>${esUrl(r.nota) ? `<a href="${esc(r.nota)}" target="_blank" rel="noopener">referencia</a>` : esc(r.nota)}` : ""}</div>`;
+}
+function conflictoHtml(r, tipo) {
+  if (!r || r.propuesta === null) return "";
+  const k = `${r.ambito}|${r.item}|${r.campo}`;
+  return `<div class="conf">El motor ahora propone <b>${esc(fmt(r.propuesta, tipo))}</b>${r.propuesta_fuente ? ` (${esc(r.propuesta_fuente)})` : ""}
+    <button class="btn sm" data-acep="${esc(k)}">Usar el del motor</button><button class="btn sm" data-rech="${esc(k)}">Mantener el del equipo</button></div>`;
+}
+const filaDe = (ambito, item, campo) => S.det.valores.find(v => v.ambito === ambito && v.item === item && v.campo === campo);
+
+function panelFicha() {
+  const p = S.proyectos.find(x => x.id === S.actual), i = S.det.ind;
+  let html = '<div class="tw"><table><thead><tr><th>Dato</th><th>Valor</th><th>Estado</th><th>Fuente</th><th></th></tr></thead><tbody>';
+  for (const pr of Object.keys(PESO)) {
+    const cs = S.campos.filter(c => c.prioridad === pr && c.clave in i.estados);
+    if (!cs.length) continue;
+    html += `<tr class="grp"><td colspan="5">${pr}</td></tr>`;
+    for (const c of cs) {
+      if (c.clave === "tipologias" || c.clave === "precio_tipologia") {
+        html += `<tr><td class="dato"><b>${esc(c.nombre)}</b><small>${esc(c.que_buscar)}</small></td>
+          <td><span class="val">${c.clave === "tipologias" ? "Ver pestaña Tipologías" : "Precio desde en cada tipología"}</span></td>
+          <td><span class="st ${i.estados[c.clave]}">${i.estados[c.clave]}</span></td><td class="src">se calcula desde las tipologías</td>
+          <td><button class="btn sm" data-tab="tipologias">Abrir</button></td></tr>`;
+        continue;
+      }
+      const r = filaDe("ficha", "", c.clave), est = r?.estado || "Falta";
+      html += `<tr><td class="dato"><b>${esc(c.nombre)}</b><small>${esc(c.que_buscar)}</small></td>
+        <td>${valorHtml(r?.valor, c.tipo)}${conflictoHtml(r, c.tipo)}</td>
+        <td><span class="st ${est}">${est}</span></td><td>${fuenteHtml(r)}</td>
+        <td class="r"><button class="btn sm" data-edit="${esc(c.clave)}">${tiene(r) ? "Editar" : "Completar"}</button></td></tr>`;
+    }
+  }
+  $("#d-panel").innerHTML = html + "</tbody></table></div>";
+  $("#d-panel").onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.tab) { S.tab = b.dataset.tab; return pintarDetalle(); }
+    if (b.dataset.acep || b.dataset.rech) return resolver(b.dataset.acep || b.dataset.rech, !!b.dataset.acep);
+    const c = S.campos.find(x => x.clave === b.dataset.edit);
+    editar({eyebrow: `${p.nombre} · ${c.prioridad}`, titulo: c.nombre, ayuda: `${c.que_buscar}. Dónde: ${c.donde}.`,
+            ambito: "ficha", item: "", campos: [{campo: c.clave, label: "Valor", tipo: c.tipo}], unico: true});
+  };
+}
+
+function agrupar(ambito) {
+  const m = new Map();
+  for (const v of S.det.valores.filter(v => v.ambito === ambito)) { if (!m.has(v.item)) m.set(v.item, {}); m.get(v.item)[v.campo] = v; }
+  return m;
+}
+const celda = (r, tipo, cls = "") => `<td class="${cls}">${r && r.valor !== null ? esc(fmt(r.valor, tipo)) : '<span class="val none">—</span>'}${r?.origen === "equipo" ? ' <span class="dot" style="background:var(--purple)" title="Editado por el equipo"></span>' : ""}${r?.propuesta !== null && r?.propuesta !== undefined ? ' <span class="tag warn">conflicto</span>' : ""}</td>`;
+
+function panelTipologias() {
+  const p = S.proyectos.find(x => x.id === S.actual), tips = agrupar("tipologia"), vistas = p.motor?.vistas_por_tipologia || {};
+  const filas = [...tips.entries()].map(([cod, f]) => {
+    const peor = Object.values(f).some(r => r.estado === "Falta" && ["m2_util", "precio_desde_uf"].includes(r.campo));
+    return `<tr><td><b>${esc(cod)}</b></td><td>${esc(f.programa?.valor || "")}${f.nombre?.valor && f.nombre.valor !== f.programa?.valor ? `<div class="src">${esc(f.nombre.valor)}</div>` : ""}</td>
+      ${celda(f.m2_util, "m2", "r num")}${celda(f.m2_terraza, "m2", "r num")}${celda(f.precio_desde_uf, "uf", "r num")}
+      <td class="r num">${nf(vistas[cod] || 0)}</td><td>${peor ? '<span class="st Falta">Falta</span>' : '<span class="st Confirmado">Completa</span>'}</td>
+      <td class="r"><button class="btn sm" data-cod="${esc(cod)}">Editar</button></td></tr>`;
+  }).join("");
+  $("#d-panel").innerHTML = `<div class="tools"><span class="src">m² útil y precio desde son los que cuentan para la completitud. Un punto morado marca lo editado por el equipo.</span><span class="sp"></span>
+    <button class="btn solid sm" id="t-nueva">+ Agregar tipología</button></div>
+    <div class="tw"><table><thead><tr><th>Código</th><th>Programa</th><th class="r">m² útil</th><th class="r">m² terraza</th><th class="r">Precio desde</th><th class="r">Vistas</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${filas || '<tr><td colspan="8" style="color:var(--dim)">El motor no encontró tipologías. Agrégalas desde el brochure o la sala de ventas.</td></tr>'}</tbody></table></div>`;
+  const conf = [...tips.entries()].flatMap(([cod, f]) => Object.values(f).filter(r => r.propuesta !== null));
+  if (conf.length) $("#d-panel").insertAdjacentHTML("afterbegin", conf.map(r => `<div style="padding:0 16px"><b style="font-size:12px">${esc(r.item)} · ${esc(r.campo)}</b>${conflictoHtml(r, "")}</div>`).join(""));
+  $("#d-panel").onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.acep || b.dataset.rech) return resolver(b.dataset.acep || b.dataset.rech, !!b.dataset.acep);
+    if (b.id === "t-nueva") return editar({eyebrow: p.nombre, titulo: "Nueva tipología", ayuda: "Usa el código o modelo del brochure (ej: C2). Programa = dormitorios y baños.",
+                                           ambito: "tipologia", item: null, campos: CAMPOS_TIP});
+    if (b.dataset.cod) editar({eyebrow: p.nombre, titulo: `Tipología ${b.dataset.cod}`, ayuda: "Solo se guardan los datos que modifiques.",
+                               ambito: "tipologia", item: b.dataset.cod, campos: CAMPOS_TIP});
+  };
+}
+
+function panelUnidades() {
+  const p = S.proyectos.find(x => x.id === S.actual), uni = agrupar("unidad");
+  const q = S.uq.toLowerCase();
+  let filas = [...uni.entries()].sort((a, b) => (a[1].piso?.valor ?? 999) - (b[1].piso?.valor ?? 999) || a[0].localeCompare(b[0], "es", {numeric: true}));
+  const sinNum = filas.filter(([, f]) => !tiene(f.numero)).length, sinPrecio = filas.filter(([, f]) => !tiene(f.precio_lista_uf)).length;
+  if (S.ufil === "sin_numero") filas = filas.filter(([, f]) => !tiene(f.numero));
+  if (S.ufil === "sin_precio") filas = filas.filter(([, f]) => !tiene(f.precio_lista_uf));
+  if (q) filas = filas.filter(([k, f]) => `${k} ${f.programa?.valor || ""} ${f.numero?.valor || ""}`.toLowerCase().includes(q));
+  const MAX = 400, cortadas = filas.length > MAX;
+  $("#d-panel").innerHTML = `<div class="tools">
+      <div class="chips" id="u-f" style="margin:0">${[["todas", `Todas (${uni.size})`], ["sin_numero", `Sin número (${sinNum})`], ["sin_precio", `Sin precio (${sinPrecio})`]]
+        .map(([k, t]) => `<button class="chip" data-u="${k}" aria-pressed="${S.ufil === k}">${t}</button>`).join("")}</div>
+      <span class="sp"></span><input class="inp" id="u-q" type="search" placeholder="Buscar código o programa" value="${esc(S.uq)}"></div>
+    <div class="tw"><table class="u-tbl"><thead><tr><th>Código portal</th><th class="r">Piso</th><th>Programa</th><th class="r">m² útil</th><th class="r">m² terraza</th><th>Orientación</th><th>N° depto</th><th class="r">Precio lista</th><th>Estado venta</th><th></th></tr></thead>
+    <tbody>${filas.slice(0, MAX).map(([k, f]) => `<tr><td><b>${esc(k)}</b></td>${celda(f.piso, "", "r num")}<td>${esc(f.programa?.valor || "")}</td>
+      ${celda(f.m2_util, "m2", "r num")}${celda(f.m2_terraza, "m2", "r num")}<td>${esc(f.orientacion?.valor || "")}</td>
+      ${tiene(f.numero) ? celda(f.numero, "") : '<td><span class="flag">sin número</span></td>'}${celda(f.precio_lista_uf, "uf", "r num")}${celda(f.estado_venta, "")}
+      <td class="r"><button class="btn sm" data-u-item="${esc(k)}">Editar</button></td></tr>`).join("")}</tbody></table></div>
+    ${cortadas ? `<p class="src" style="padding:8px 16px">Se muestran ${MAX} de ${filas.length}. Usa el buscador o los filtros.</p>` : ""}`;
+  $("#u-q").oninput = debounce(e => { S.uq = e.target.value; panelUnidades(); $("#u-q").focus(); $("#u-q").setSelectionRange(S.uq.length, S.uq.length); }, 250);
+  $("#d-panel").onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.u) { S.ufil = b.dataset.u; return panelUnidades(); }
+    if (b.dataset.uItem) {
+      const f = uni.get(b.dataset.uItem);
+      editar({eyebrow: p.nombre, titulo: `Unidad ${b.dataset.uItem}`,
+              ayuda: `${f.programa?.valor || ""} · ${fmt(f.m2_util?.valor, "m2")} · piso ${f.piso?.valor ?? "?"}. Solo se guardan los datos que modifiques.`,
+              ambito: "unidad", item: b.dataset.uItem, campos: CAMPOS_UNI});
+    }
+  };
+}
+
+function panelDocumentos() {
+  const d = S.det;
+  $("#d-panel").innerHTML = `<form class="drop" id="doc-f">
+      <div><label class="f" for="doc-a">Archivo (máx. 50 MB)</label><input class="inp" id="doc-a" type="file" required></div>
+      <div><label class="f" for="doc-t">Tipo</label><select class="inp" id="doc-t">${TIPOS_DOC.map(t => `<option>${t}</option>`).join("")}</select></div>
+      <div><label class="f" for="doc-n">Nota (opcional)</label><input class="inp" id="doc-n" placeholder="Ej: lista de precios sala de ventas, nov-2026"></div>
+      <button class="btn solid" id="doc-b">Subir</button></form>
+    <div class="tw"><table><thead><tr><th>Documento</th><th>Tipo</th><th>Nota</th><th>Subido por</th><th></th></tr></thead><tbody>
+    ${d.docs.map(x => `<tr><td><b>${esc(x.nombre)}</b><div class="src">${nf((x.bytes || 0) / 1048576, 1)} MB</div></td><td>${esc(x.tipo)}</td><td class="src">${esc(x.nota || "")}</td>
+      <td class="src"><span class="eq">${esc(nombre(x.subido_por))}</span> · ${fecha(x.subido_en)}</td>
+      <td class="r"><button class="btn sm" data-ruta="${esc(x.ruta)}">Abrir</button></td></tr>`).join("")
+      || '<tr><td colspan="5" style="color:var(--dim)">Sin documentos. Sube brochures, listas de precios, permisos o fotos de terreno.</td></tr>'}
+    </tbody></table></div>`;
+  $("#doc-f").onsubmit = subirDocumento;
+  $("#d-panel").onclick = async e => {
+    const b = e.target.closest("button[data-ruta]"); if (!b) return;
+    const {data, error} = await sb.storage.from("documentos").createSignedUrl(b.dataset.ruta, 300);
+    if (error) return toast("No se pudo abrir: " + error.message, true);
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
+}
+async function subirDocumento(e) {
+  e.preventDefault();
+  const f = $("#doc-a").files[0]; if (!f) return;
+  if (f.size > 50 * 1048576) return toast("El archivo supera 50 MB", true);
+  $("#doc-b").disabled = true; $("#doc-b").textContent = "Subiendo…";
+  const limpio = f.name.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w.\-]+/g, "_");
+  const ruta = `${S.actual}/${crypto.randomUUID().slice(0, 8)}-${limpio}`;
+  const up = await sb.storage.from("documentos").upload(ruta, f, {contentType: f.type || undefined});
+  if (up.error) { toast("No se pudo subir: " + up.error.message, true); $("#doc-b").disabled = false; $("#doc-b").textContent = "Subir"; return; }
+  const {error} = await sb.from("documentos").insert({proyecto_id: S.actual, nombre: f.name, tipo: $("#doc-t").value, ruta, bytes: f.size, nota: $("#doc-n").value || null});
+  if (error) toast("Se subió el archivo pero no se registró: " + error.message, true); else toast("Documento subido");
+  cargarDetalle(S.actual);
+}
+
+function panelHistorial() {
+  const extra = {codigo_portal: "Código portal", programa: "Programa", orientacion: "Orientación"};
+  const campoNombre = h => h.ambito === "proyecto" ? "Etapa"
+    : h.ambito === "ficha" ? (S.campos.find(c => c.clave === h.campo)?.nombre || h.campo)
+    : (CAMPOS_TIP.concat(CAMPOS_UNI).find(c => c.campo === h.campo)?.label || extra[h.campo] || h.campo);
+  const ambitoTxt = h => h.ambito === "unidad" ? "unidad " : h.ambito === "tipologia" ? "tipología " : "";
+  const v = x => x === null || x === undefined ? "vacío" : esc(typeof x === "object" ? JSON.stringify(x) : x);
+  $("#d-panel").innerHTML = S.det.hist.map(h => `<div class="h-item"><time>${fecha(h.en)}</time><div>
+      <span class="q">${esc(nombre(h.autor))}</span> · ${esc(h.accion)} · <b>${esc(campoNombre(h))}</b>${h.item ? ` · ${ambitoTxt(h)}${esc(h.item)}` : ""}
+      <div class="ch">${h.accion === "creado" ? `<b>${v(h.despues)}</b>` : `${v(h.antes)} → <b>${v(h.despues)}</b>`}${h.estado ? ` · ${esc(h.estado)}` : ""}${h.fuente ? ` · ${esc(h.fuente)}` : ""}</div></div></div>`).join("")
+    || '<p style="padding:16px;color:var(--dim)">Sin cambios registrados.</p>';
+}
+
+// ── edición ───────────────────────────────────────────────────────────────────
+let EDIT = null;
+function inputDe(c, r, i) {
+  const v = r?.valor ?? "";
+  if (c.tipo === "opcion") return `<select class="inp" data-i="${i}"><option value=""></option>${c.opciones.map(o => `<option ${o === v ? "selected" : ""}>${o}</option>`).join("")}</select>`;
+  const num = ["entero", "uf", "m2"].includes(c.tipo);
+  return `<input class="inp" data-i="${i}" ${num ? `type="number" step="${c.tipo === "entero" ? 1 : "any"}" min="0"` : c.tipo === "url" ? 'type="url"' : 'type="text"'} value="${esc(v)}">`;
+}
+function editar(cfg) {
+  const filas = cfg.campos.map(c => cfg.item === null ? null : filaDe(cfg.ambito, cfg.item, c.campo));
+  const base = cfg.unico ? filas[0] : null;
+  EDIT = {...cfg, filas, tocados: new Set()};
+  $("#e-eye").textContent = cfg.eyebrow; $("#e-tit").textContent = cfg.titulo; $("#e-ayuda").textContent = cfg.ayuda; $("#e-err").textContent = "";
+  const estadoIni = base && ["Confirmado", "Inferido"].includes(base.estado) && base.origen === "equipo" ? base.estado : "Confirmado";
+  $("#e-campos").innerHTML = `
+    ${cfg.item === null ? `<label class="f" for="e-item">Código</label><input class="inp" id="e-item" required maxlength="20" placeholder="Ej: C2">` : ""}
+    <div class="${cfg.campos.length > 1 ? "grid2" : ""}">${cfg.campos.map((c, i) => `<div><label class="f">${esc(c.label)}</label>${inputDe(c, filas[i], i)}</div>`).join("")}</div>
+    ${base ? `<div class="actual">Hoy: <b>${base.valor !== null ? esc(fmt(base.valor, cfg.campos[0].tipo)) : "sin dato"}</b> · ${esc(base.estado)}${base.fuente ? ` · ${esc(base.fuente)}` : ""}${base.origen === "equipo" ? ` · ${esc(nombre(base.autor))}` : ""}</div>` : ""}
+    <label class="f">¿Qué tan seguro es?</label>
+    <div class="seg">${[["Confirmado", "Lo vi en una fuente"], ["Inferido", "Lo deduje de un patrón"], ["Falta", "No hay dato"]]
+      .map(([e, t]) => `<label><input type="radio" name="e-est" value="${e}" ${e === estadoIni ? "checked" : ""}>${e}<span class="src">· ${t}</span></label>`).join("")}</div>
+    <div class="grid2"><div><label class="f" for="e-fuente">Fuente</label><select class="inp" id="e-fuente"><option value=""></option>${FUENTES.map(f => `<option ${base?.origen === "equipo" && base?.fuente === f ? "selected" : ""}>${f}</option>`).join("")}</select></div>
+    <div><label class="f" for="e-nota">Link o referencia</label><input class="inp" id="e-nota" value="${esc(base?.origen === "equipo" ? base?.nota || "" : "")}" placeholder="URL, nombre del documento o contacto"></div></div>
+    <div class="hint">No inventes datos para completar: si no hay fuente, déjalo como Falta.</div>`;
+  $("#e-campos").oninput = e => { if (e.target.dataset.i !== undefined) EDIT.tocados.add(+e.target.dataset.i); };
+  $("#e-campos").onchange = $("#e-campos").oninput;
+  $("#m-edit").showModal();
+}
+function leerValor(c, el) {
+  const s = el.value.trim();
+  if (s === "") return null;
+  if (c.tipo === "entero") return parseInt(s, 10);
+  if (c.tipo === "uf" || c.tipo === "m2") return parseFloat(s);
+  return s;
+}
+$("#f-edit").addEventListener("submit", async e => {
+  if (e.submitter?.value !== "ok") return;
+  e.preventDefault();
+  const est = $("#e-campos").querySelector("input[name=e-est]:checked").value, fuente = $("#e-fuente").value, nota = $("#e-nota").value.trim() || null;
+  const item = EDIT.item === null ? $("#e-item").value.trim().toUpperCase() : EDIT.item;
+  if (!item && EDIT.ambito !== "ficha") return $("#e-err").textContent = "Falta el código.";
+  if (est !== "Falta" && !fuente) return $("#e-err").textContent = "Indica la fuente del dato.";
+  const cambios = [];
+  let invalido = "";
+  EDIT.campos.forEach((c, i) => {
+    const el = $(`#e-campos [data-i="${i}"]`), r = EDIT.filas[i];
+    let valor = leerValor(c, el);
+    if (c.tipo !== "texto" && c.tipo !== "url" && c.tipo !== "opcion" && valor !== null && (isNaN(valor) || valor < 0)) { invalido = `${c.label}: número inválido`; return; }
+    if (est === "Falta") valor = null;
+    const tocado = EDIT.unico || EDIT.tocados.has(i);
+    if (!tocado) return;
+    if (est !== "Falta" && valor === null) return;
+    cambios.push({c, r, valor});
+  });
+  if (invalido) return $("#e-err").textContent = invalido;
+  if (EDIT.unico && est !== "Falta" && cambios.length === 0) return $("#e-err").textContent = "Ingresa el valor o marca Falta.";
+  if (!cambios.length) return $("#e-err").textContent = "No modificaste ningún dato.";
+  $("#e-ok").disabled = true;
+  let choque = false;
+  for (const {c, r, valor} of cambios) {
+    const fila = {valor, estado: est, fuente: est === "Falta" ? null : fuente, nota};
+    let res;
+    if (r) res = await sb.from("valores").update(fila).eq("proyecto_id", S.actual).eq("ambito", EDIT.ambito).eq("item", item).eq("campo", c.campo).eq("version", r.version).select("version");
+    else res = await sb.from("valores").insert({proyecto_id: S.actual, ambito: EDIT.ambito, item, campo: c.campo, ...fila}).select("version");
+    if (res.error) {
+      $("#e-ok").disabled = false;
+      if (res.error.code === "23505") { choque = true; break; }
+      return $("#e-err").textContent = res.error.message;
+    }
+    if (r && !res.data.length) { choque = true; break; }
+  }
+  $("#e-ok").disabled = false;
+  $("#m-edit").close();
+  if (choque) toast("Otra persona cambió este dato mientras editabas. Se cargó su versión: revísala y vuelve a guardar.", true);
+  else toast("Guardado");
+  if (EDIT.ambito === "ficha" && EDIT.campos[0].campo === "unidades_total" && est === "Confirmado") toast("Recuerda subir el documento que lo respalda en Documentos");
+  cargarDetalle(S.actual);
+});
+
+async function resolver(k, aceptar) {
+  const [ambito, item, campo] = k.split("|"), r = filaDe(ambito, item, campo);
+  const cambio = aceptar
+    ? {valor: r.propuesta, fuente: r.propuesta_fuente || "Motor TypeScope", estado: r.estado === "Falta" ? "Inferido" : r.estado, propuesta: null}
+    : {rechazada: r.propuesta, propuesta: null};
+  const {data, error} = await sb.from("valores").update(cambio).eq("proyecto_id", S.actual).eq("ambito", ambito).eq("item", item).eq("campo", campo).eq("version", r.version).select("version");
+  if (error) return toast(error.message, true);
+  if (!data.length) toast("Otra persona ya resolvió este conflicto.", true);
+  cargarDetalle(S.actual);
+}
+async function cambiarEtapa(p, etapa) {
+  const {data, error} = await sb.from("proyectos").update({etapa}).eq("id", p.id).eq("version", p.version).select("*");
+  if (error) return toast(error.message, true);
+  if (!data.length) { toast("Otra persona cambió la etapa. Se cargó la actual.", true); }
+  else Object.assign(p, data[0]);
+  const {data: fresco} = await sb.from("proyectos").select("*").eq("id", p.id).single();
+  if (fresco) Object.assign(p, fresco);
+  cargarDetalle(p.id);
+}
+
+// ── tiempo real ───────────────────────────────────────────────────────────────
+const refrescar = debounce(pid => { if (pid === S.actual) cargarDetalle(pid); else cargarResumen(pid); }, 500);
+function suscribir() {
+  const yo = S.user.email.toLowerCase();
+  let ultimo = "";
+  const avisar = (quien, texto) => {
+    if (!quien || quien === yo || quien === "motor") return;
+    const msg = `${nombre(quien)} ${texto}`;
+    if (msg === ultimo) return;
+    ultimo = msg; setTimeout(() => { if (ultimo === msg) ultimo = ""; }, 3000);
+    toast(msg);
+  };
+  sb.channel("cambios")
+    .on("postgres_changes", {event: "*", schema: "public", table: "valores"}, ({new: n}) => {
+      if (!n?.proyecto_id) return;
+      const p = S.proyectos.find(x => x.id === n.proyecto_id);
+      const c = S.campos.find(x => x.clave === n.campo)?.nombre || n.campo;
+      avisar(n.autor, `editó ${n.ambito === "ficha" ? c : `${n.ambito === "unidad" ? "la unidad" : "la tipología"} ${n.item}`} · ${p?.nombre || n.proyecto_id}`);
+      refrescar(n.proyecto_id);
+    })
+    .on("postgres_changes", {event: "*", schema: "public", table: "proyectos"}, ({new: n}) => {
+      if (!n?.id) return;
+      const i = S.proyectos.findIndex(x => x.id === n.id);
+      if (i >= 0) Object.assign(S.proyectos[i], n); else S.proyectos.push(n);
+      avisar(n.etapa_por, `pasó ${n.nombre} a ${n.etapa}`);
+      refrescar(n.id);
+    })
+    .on("postgres_changes", {event: "INSERT", schema: "public", table: "documentos"}, ({new: n}) => {
+      avisar(n.subido_por, `subió ${n.nombre}`);
+      refrescar(n.proyecto_id);
+    })
+    .subscribe(st => {
+      const on = st === "SUBSCRIBED";
+      $("#t-live").classList.toggle("on", on);
+      $("#t-live span").textContent = on ? "En vivo" : "Reconectando…";
+    });
+}
+
+sb.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT") mostrarLogin(); });
+iniciar();
+</script>
+</body>
+</html>
